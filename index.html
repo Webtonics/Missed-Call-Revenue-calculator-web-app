@@ -1,60 +1,127 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="/">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="A new Flutter project.">
-
+  
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="missed_call_roi_calculator">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
+  
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
   <title>missed_call_roi_calculator</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    body {
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 5px solid #FFF;
+      border-bottom-color: #42a5f5;
+      border-radius: 50%;
+      display: inline-block;
+      box-sizing: border-box;
+      animation: rotation 1s linear infinite;
+    }
+
+    .loading-text {
+      margin-top: 16px;
+      font-family: Arial, sans-serif;
+      color: #333;
+      font-size: 16px;
+    }
+
+    @keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
 
   <script>
     // The value below is injected by flutter build, do not touch.
     const serviceWorkerVersion = "1850388643";
   </script>
-  <!-- This script adds the flutter initialization JS code -->
+  
+  <!-- Preload flutter.js for faster startup -->
+  <link rel="preload" href="flutter.js" as="script">
   <script src="flutter.js" defer></script>
 </head>
 <body>
+  <div id="loading-container">
+    <span class="loader"></span>
+    <p class="loading-text">Loading application...</p>
+  </div>
+
   <script>
-    window.addEventListener('load', function(ev) {
-      // Download main.dart.js
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-          });
-        }
+    // Performance optimization: Use requestIdleCallback if available
+    const scheduleAppLoad = window.requestIdleCallback || setTimeout;
+    
+    window.addEventListener('load', function() {
+      const loadingContainer = document.getElementById('loading-container');
+      
+      // Initialize Flutter when the browser is idle
+      scheduleAppLoad(() => {
+        _flutter.loader.loadEntrypoint({
+          serviceWorker: {
+            serviceWorkerVersion: serviceWorkerVersion,
+          },
+          onEntrypointLoaded: async function(engineInitializer) {
+            try {
+              const appRunner = await engineInitializer.initializeEngine();
+              loadingContainer.classList.add('hidden');
+              await appRunner.runApp();
+            } catch (error) {
+              console.error('Flutter initialization error:', error);
+              loadingContainer.innerHTML = `
+                <p class="loading-text" style="color: red;">
+                  Failed to load application. Please refresh the page.
+                </p>`;
+            }
+          }
+        });
       });
+    });
+
+    // Add error handling for script loading
+    window.addEventListener('error', function(e) {
+      if (e.target.tagName === 'SCRIPT') {
+        document.getElementById('loading-container').innerHTML = `
+          <p class="loading-text" style="color: red;">
+            Failed to load required resources. Please check your connection and refresh.
+          </p>`;
+      }
     });
   </script>
 </body>
 </html>
-
